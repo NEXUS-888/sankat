@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Auth Styles */
+@import './auth.css';
+
 @layer base {
   :root {
     --background: 222 47% 11%;

@@ -57,6 +57,16 @@ export function MapView({ crises, selectedCrisis, onSelectCrisis }: MapViewProps
   const map = useRef<maplibregl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [crisisLimit, setCrisisLimit] = useState<CrisisLimit>(100);
+  
+  // Store crises and callback in refs to avoid stale closures
+  const crisesRef = useRef<Crisis[]>(crises);
+  const onSelectCrisisRef = useRef(onSelectCrisis);
+  
+  // Update refs when props change
+  useEffect(() => {
+    crisesRef.current = crises;
+    onSelectCrisisRef.current = onSelectCrisis;
+  }, [crises, onSelectCrisis]);
 
   // Get limited crises
   const limitedCrises = crises.slice(0, crisisLimit);
@@ -257,10 +267,16 @@ export function MapView({ crises, selectedCrisis, onSelectCrisis }: MapViewProps
         if (!features?.length) return;
         
         const props = features[0].properties;
+        console.log('Clicked crisis marker with props:', props);
         if (props?.id) {
-          const crisis = crises.find((c) => c.id === props.id);
+          // Use ref to access current crises array
+          console.log('Crisis ID from click:', props.id);
+          const crisis = crisesRef.current.find((c) => c.id === props.id);
+          console.log('Found crisis:', crisis);
           if (crisis) {
-            onSelectCrisis(crisis);
+            onSelectCrisisRef.current(crisis);
+          } else {
+            console.warn('Crisis not found for ID:', props.id);
           }
         }
       });

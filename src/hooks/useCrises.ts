@@ -44,11 +44,14 @@ export function useCrises() {
   useEffect(() => {
     const fetchCharities = async () => {
       try {
+        console.log('Fetching charities from:', `${API_URL}/charities/`);
         const response = await fetch(`${API_URL}/charities/`);
         if (response.ok) {
           const data = await response.json();
           // API returns { charities: [...] } so extract the array
-          setCharities(Array.isArray(data) ? data : data.charities || []);
+          const charitiesArray = Array.isArray(data) ? data : data.charities || [];
+          console.log('Fetched charities:', charitiesArray.length);
+          setCharities(charitiesArray);
         } else {
           console.error('Failed to fetch charities:', response.statusText);
         }
@@ -88,7 +91,9 @@ export function useCrises() {
   }, [crises, filters]);
 
   const getCharitiesForCrisis = (crisisId: number): Charity[] => {
-    return charities.filter((charity) => charity.crisis_id === crisisId);
+    const filtered = charities.filter((charity) => charity.crisis_id === crisisId);
+    console.log(`Getting charities for crisis ${crisisId}:`, filtered.length, 'found');
+    return filtered;
   };
 
   const updateSearch = (search: string) => {

@@ -5,10 +5,14 @@ import { CrisisList } from '@/components/CrisisList';
 import { CrisisDetailsPanel } from '@/components/CrisisDetailsPanel';
 import { MapView } from '@/components/MapView';
 import { useCrises } from '@/hooks/useCrises';
-import { X } from 'lucide-react';
+import { X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const Index = () => {
+interface IndexProps {
+  onLogout?: () => void;
+}
+
+const Index = ({ onLogout }: IndexProps) => {
   const {
     crises,
     selectedCrisis,
@@ -38,7 +42,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header>
+        {onLogout && (
+          <Button
+            onClick={onLogout}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <LogOut className="h-4 w-4" />
+            Logout
+          </Button>
+        )}
+      </Header>
       
       <main className="pt-16 h-screen flex flex-col lg:flex-row">
         {/* Sidebar */}

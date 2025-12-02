@@ -1,7 +1,11 @@
-import { Globe, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Globe } from 'lucide-react';
+import { ReactNode } from 'react';
 
-export function Header() {
+interface HeaderProps {
+  children?: ReactNode;
+}
+
+export function Header({ children }: HeaderProps) {
   return (
     <header className="glass-strong fixed top-0 left-0 right-0 z-50 h-16 px-4 lg:px-6">
       <div className="h-full flex items-center justify-between max-w-[2000px] mx-auto">
@@ -20,14 +24,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            className="glass border-border/50 hover:bg-secondary/50"
-          >
-            <User className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Sign In</span>
-          </Button>
+          {children}
         </div>
       </div>
     </header>

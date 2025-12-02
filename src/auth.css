@@ -1,0 +1,259 @@
+/* ===== Premium Animated Auth Styles ===== */
+
+/* Container & Background */
+.auth-container {
+  @apply relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950;
+}
+
+/* Animated Background Gradients */
+.auth-bg-gradient {
+  @apply absolute rounded-full blur-3xl opacity-30;
+  animation: float 20s ease-in-out infinite;
+}
+
+.auth-bg-gradient-1 {
+  @apply w-96 h-96 bg-gradient-to-r from-primary to-cyan-500;
+  top: -10%;
+  left: -5%;
+  animation-delay: 0s;
+}
+
+.auth-bg-gradient-2 {
+  @apply w-[500px] h-[500px] bg-gradient-to-r from-purple-500 to-pink-500;
+  bottom: -15%;
+  right: -10%;
+  animation-delay: -7s;
+}
+
+.auth-bg-gradient-3 {
+  @apply w-80 h-80 bg-gradient-to-r from-cyan-400 to-blue-500;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation-delay: -14s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  50% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+  75% {
+    transform: translate(20px, 30px) scale(1.05);
+  }
+}
+
+/* Grid Overlay */
+.auth-grid-overlay {
+  @apply absolute inset-0 opacity-10;
+  background-image: 
+    linear-gradient(rgba(99, 102, 241, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99, 102, 241, 0.1) 1px, transparent 1px);
+  background-size: 50px 50px;
+  animation: gridMove 20s linear infinite;
+}
+
+@keyframes gridMove {
+  0% {
+    transform: translate(0, 0);
+  }
+  100% {
+    transform: translate(50px, 50px);
+  }
+}
+
+/* Branding Panel */
+.auth-brand-panel {
+  @apply relative p-8 rounded-3xl;
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+/* Globe Rings */
+.auth-globe-ring {
+  @apply absolute rounded-full border-2 border-primary/30;
+  animation: pulse-ring 3s ease-in-out infinite;
+}
+
+.auth-globe-ring-1 {
+  @apply w-32 h-32;
+  animation-delay: 0s;
+}
+
+.auth-globe-ring-2 {
+  @apply w-24 h-24 inset-4;
+  animation-delay: 1s;
+}
+
+.auth-globe-ring-3 {
+  @apply w-16 h-16 inset-8;
+  animation-delay: 2s;
+}
+
+@keyframes pulse-ring {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.6;
+  }
+}
+
+/* Gradient Text */
+.auth-gradient-text {
+  @apply bg-gradient-to-r from-primary via-cyan-400 to-purple-500 bg-clip-text text-transparent;
+  animation: gradient-shift 3s ease infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes gradient-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Glass Card */
+.auth-glass-card {
+  @apply relative rounded-3xl overflow-hidden;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(40px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 0 80px rgba(99, 102, 241, 0.15),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Tab Container */
+.auth-tab-container {
+  @apply relative flex p-2 bg-slate-900/50 rounded-2xl m-6 mb-0;
+}
+
+.auth-tab {
+  @apply relative flex-1 py-3 px-6 text-sm font-medium text-gray-400 rounded-xl transition-all duration-300 z-10;
+}
+
+.auth-tab-active {
+  @apply text-white;
+}
+
+.auth-tab-indicator {
+  @apply absolute top-2 left-2 bottom-2 w-[calc(50%-8px)] rounded-xl;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(59, 130, 246, 0.2));
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
+/* Input Group */
+.auth-input-group {
+  @apply relative;
+}
+
+.auth-input {
+  @apply w-full px-12 py-4 bg-slate-900/50 border border-slate-700/50 rounded-xl text-white placeholder-transparent;
+  @apply transition-all duration-300 outline-none;
+}
+
+.auth-input:focus {
+  @apply border-primary/50 bg-slate-900/70;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1), 0 0 20px rgba(99, 102, 241, 0.2);
+}
+
+.auth-input-focused {
+  @apply border-primary/50 bg-slate-900/70;
+}
+
+.auth-input-label {
+  @apply absolute left-12 top-4 text-gray-400 transition-all duration-300 pointer-events-none;
+}
+
+.auth-input:focus ~ .auth-input-label,
+.auth-input:not(:placeholder-shown) ~ .auth-input-label {
+  @apply -top-2 left-10 text-xs text-primary px-2;
+  background: linear-gradient(180deg, transparent 40%, rgba(15, 23, 42, 0.9) 40%);
+}
+
+.auth-input-icon {
+  @apply absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-300 z-10;
+}
+
+/* Submit Button */
+.auth-submit-button {
+  @apply relative w-full py-4 px-6 font-semibold text-white rounded-xl overflow-hidden;
+  @apply transition-all duration-300;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.auth-submit-button:hover:not(:disabled) {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 30px rgba(99, 102, 241, 0.3);
+}
+
+.auth-submit-button:disabled {
+  @apply opacity-70 cursor-not-allowed;
+}
+
+.auth-button-gradient {
+  @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+  background: linear-gradient(135deg, #6366f1, #3b82f6, #06b6d4);
+  background-size: 200% 200%;
+  animation: gradient-flow 3s ease infinite;
+}
+
+.auth-submit-button:hover:not(:disabled) .auth-button-gradient {
+  @apply opacity-100;
+}
+
+@keyframes gradient-flow {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Switch Link */
+.auth-switch-link {
+  @apply font-medium text-primary hover:text-primary/80 transition-colors underline underline-offset-2;
+}
+
+/* Error Message */
+.auth-error-message {
+  @apply px-4 py-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm;
+}
+
+/* Floating Particles */
+.auth-particles {
+  @apply absolute inset-0 overflow-hidden pointer-events-none;
+}
+
+.auth-particle {
+  @apply absolute w-1 h-1 bg-primary/30 rounded-full;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .auth-bg-gradient-1,
+  .auth-bg-gradient-2,
+  .auth-bg-gradient-3 {
+    @apply w-64 h-64;
+  }
+}
+
+/* Loading Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
