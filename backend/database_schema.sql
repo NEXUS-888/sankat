@@ -4,6 +4,15 @@
 -- Drop tables if they exist (for fresh setup)
 DROP TABLE IF EXISTS charities CASCADE;
 DROP TABLE IF EXISTS crises CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- Create users table
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- Create crises table
 CREATE TABLE crises (

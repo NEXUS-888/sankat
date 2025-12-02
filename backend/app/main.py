@@ -5,7 +5,7 @@ Main application entry point.
 
 from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
@@ -16,12 +16,22 @@ from .models import (
     HealthResponse,
     CategoryType,
     SeverityType,
+    UserRegister,
+    UserLogin,
+    Token,
+    UserResponse,
 )
 from .database import (
     fetch_crises,
     fetch_crisis_by_id,
     fetch_charities,
     fetch_charities_by_crisis,
+)
+from .auth import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    get_current_user,
 )
 
 # Create FastAPI app
@@ -117,6 +127,127 @@ async def get_charities_by_crisis(crisis_id: int):
     
     charities = fetch_charities_by_crisis(crisis_id)
     return {"charities": [CharityResponse(**charity) for charity in charities]}
+
+
+# ============ Authentication Routes ============
+
+@app.post("/auth/register", response_model=Token, tags=["Authentication"])
+async def register(user: UserRegister):
+    """
+    Register a new user with email and password.
+    Returns a JWT access token upon successful registration.
+    """
+    from .database import get_db_connection
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if user already exists
+            cursor.execute("SELECT id FROM users WHERE email = %s", (user.email,))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Email already registered")
+            
+            # Hash password and create user
+            hashed_password = hash_password(user.password)
+            cursor.execute(
+                "INSERT INTO users (email, password_hash) VALUES (%s, %s) RETURNING id",
+                (user.email, hashed_password)
+            )
+            user_id = cursor.fetchone()[0]
+            conn.commit()
+            
+            cursor.close()
+        
+        # Create access token
+        access_token = create_access_token(data={"user_id": user_id, "email": user.email})
+        
+        return {"access_token": access_token, "token_type": "bearer"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
+
+@app.post("/auth/login", response_model=Token, tags=["Authentication"])
+async def login(user: UserLogin):
+    """
+    Login with email and password.
+    Returns a JWT access token upon successful authentication.
+    """
+    from .database import get_db_connection
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Fetch user by email
+            cursor.execute(
+                "SELECT id, email, password_hash FROM users WHERE email = %s",
+                (user.email,)
+            )
+            db_user = cursor.fetchone()
+            cursor.close()
+        
+        if not db_user:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password"
+            )
+        
+        user_id, email, password_hash = db_user
+        
+        # Verify password
+        if not verify_password(user.password, password_hash):
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid email or password"
+            )
+        
+        # Create access token
+        access_token = create_access_token(data={"user_id": user_id, "email": email})
+        
+        return {"access_token": access_token, "token_type": "bearer"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+
+
+@app.get("/auth/me", response_model=UserResponse, tags=["Authentication"])
+async def get_current_user_info(current_user: dict = Depends(get_current_user)):
+    """
+    Get current authenticated user's information.
+    Requires a valid JWT token in the Authorization header.
+    """
+    from .database import get_db_connection
+    
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            cursor.execute(
+                "SELECT id, email, created_at FROM users WHERE id = %s",
+                (current_user["user_id"],)
+            )
+            db_user = cursor.fetchone()
+            cursor.close()
+        
+        if not db_user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        user_id, email, created_at = db_user
+        
+        return UserResponse(id=user_id, email=email, created_at=created_at)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch user: {str(e)}")
 
 
 if __name__ == "__main__":
