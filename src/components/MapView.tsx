@@ -62,17 +62,30 @@ export function MapView({ crises, selectedCrisis, onSelectCrisis }: MapViewProps
 
     // Add new markers
     crises.forEach((crisis) => {
+      // Create wrapper for proper positioning
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = `
+        position: relative;
+        width: 0;
+        height: 0;
+      `;
+
+      // Create the actual marker element
       const el = document.createElement('div');
       el.className = 'crisis-marker';
       el.style.cssText = `
+        position: absolute;
+        top: -12px;
+        left: -12px;
         width: 24px;
         height: 24px;
         background: ${categoryColors[crisis.category]};
         border: 2px solid rgba(255,255,255,0.3);
         border-radius: 50%;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
         box-shadow: 0 0 10px ${categoryColors[crisis.category]}80;
+        transform-origin: center center;
       `;
 
       if (crisis.severity === 'Critical' || crisis.severity === 'High') {
@@ -82,18 +95,25 @@ export function MapView({ crises, selectedCrisis, onSelectCrisis }: MapViewProps
       el.addEventListener('mouseenter', () => {
         el.style.transform = 'scale(1.3)';
         el.style.boxShadow = `0 0 20px ${categoryColors[crisis.category]}`;
+        el.style.zIndex = '1000';
       });
 
       el.addEventListener('mouseleave', () => {
         el.style.transform = 'scale(1)';
         el.style.boxShadow = `0 0 10px ${categoryColors[crisis.category]}80`;
+        el.style.zIndex = '';
       });
 
       el.addEventListener('click', () => {
         onSelectCrisis(crisis);
       });
 
-      const marker = new maplibregl.Marker({ element: el })
+      wrapper.appendChild(el);
+
+      const marker = new maplibregl.Marker({ 
+        element: wrapper,
+        anchor: 'center'
+      })
         .setLngLat([crisis.longitude, crisis.latitude])
         .addTo(map.current!);
 
@@ -138,8 +158,20 @@ export function MapView({ crises, selectedCrisis, onSelectCrisis }: MapViewProps
       {/* Pulse animation style */}
       <style>{`
         @keyframes pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.2); opacity: 0.7; }
+          0%, 100% { 
+            box-shadow: 0 0 10px currentColor;
+            opacity: 1; 
+          }
+          50% { 
+            box-shadow: 0 0 20px currentColor;
+            opacity: 0.8; 
+          }
+        }
+        .crisis-marker {
+          will-change: transform, box-shadow;
+        }
+        .maplibregl-marker {
+          will-change: transform;
         }
       `}</style>
     </div>

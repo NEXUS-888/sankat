@@ -1,39 +1,53 @@
-# Welcome to your Lovable project
+# Global Problems Map - Sankat
 
-## Project info
+Track and support global crises with real-time crisis mapping and charity connections.
 
-**URL**: https://lovable.dev/projects/46e0320e-1723-4724-a08a-1f74ccea86ba
+## Project Overview
 
-## How can I edit this code?
+This application provides an interactive map to visualize global crises and connect users with relevant charitable organizations. It combines real-time data visualization with actionable ways to help.
 
-There are several ways of editing your application.
+## Getting Started
 
-**Use Lovable**
+**Local Development**
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/46e0320e-1723-4724-a08a-1f74ccea86ba) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Clone the repository and start developing:
 
 The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
 Follow these steps:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repository
 git clone <YOUR_GIT_URL>
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Navigate to the project directory
+cd sankat
 
-# Step 3: Install the necessary dependencies.
-npm i
+# Install dependencies
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Set up environment variables
+cp .env.example .env
+# Add your MapTiler API key to .env
+
+# Start the frontend development server
 npm run dev
+
+# In a separate terminal, set up the backend
+cd backend
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+
+# Set up the database
+cp .env.example .env
+# Configure your database credentials in backend/.env
+# Initialize PostgreSQL and run the schema
+psql -U postgres -d globemap -f database_schema.sql
+python seed_data.py
+
+# Start the backend server
+uvicorn app.main:app --reload
 ```
 
 **Edit a file directly in GitHub**
@@ -50,24 +64,57 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## What technologies are used for this project?
+## Tech Stack
 
-This project is built with:
+### Frontend
+- **Vite** - Build tool and dev server
+- **React** - UI framework
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Styling
+- **shadcn/ui** - UI component library
+- **MapLibre GL** - Interactive maps
+- **TanStack Query** - Data fetching and caching
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Backend
+- **FastAPI** - Python web framework
+- **PostgreSQL** - Database
+- **Uvicorn** - ASGI server
+- **Pydantic** - Data validation
+- **psycopg2** - PostgreSQL adapter
 
-## How can I deploy this project?
+## Features
 
-Simply open [Lovable](https://lovable.dev/projects/46e0320e-1723-4724-a08a-1f74ccea86ba) and click on Share -> Publish.
+- 🗺️ Interactive global crisis map with real-time visualization
+- 📊 Crisis filtering by category and severity
+- 🎯 Detailed crisis information panels
+- 💰 Direct links to charitable organizations
+- 🔍 Search functionality
+- 📱 Responsive design
 
-## Can I connect a custom domain to my Lovable project?
+## Environment Variables
 
-Yes, you can!
+### Frontend (.env)
+```
+VITE_MAPTILER_KEY=your_maptiler_api_key
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Backend (backend/.env)
+```
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=globemap
+DB_USER=postgres
+DB_PASSWORD=your_password
+```
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## API Endpoints
+
+- `GET /health` - Health check
+- `GET /crises/` - List all crises (with optional filters)
+- `GET /crises/{id}` - Get specific crisis
+- `GET /charities/` - List charities (optionally filtered by crisis)
+- API Documentation: `http://localhost:8000/docs`
+
+## Contributing
+
+Feel free to submit issues and pull requests!
