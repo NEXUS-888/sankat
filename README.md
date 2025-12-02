@@ -1,104 +1,18 @@
 # Global Problems Map - Sankat
 
-Track and support global crises with real-time crisis mapping and charity connections.
+A minimal overview of the project with only essential details.
 
-## Project Overview
-
-This application provides an interactive map to visualize global crises and connect users with relevant charitable organizations. It combines real-time data visualization with actionable ways to help.
-
-## Getting Started
-
-**Local Development**
-
-Clone the repository and start developing:
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Clone the repository
-git clone <YOUR_GIT_URL>
-
-# Navigate to the project directory
-cd sankat
-
-# Install dependencies
-npm install
-
-# Set up environment variables
-cp .env.example .env
-# Add your MapTiler API key to .env
-
-# Start the frontend development server
-npm run dev
-
-# In a separate terminal, set up the backend
-cd backend
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-# Set up the database
-cp .env.example .env
-# Configure your database credentials in backend/.env
-# Initialize PostgreSQL and run the schema
-psql -U postgres -d globemap -f database_schema.sql
-python seed_data.py
-
-# Start the backend server
-uvicorn app.main:app --reload
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## Tech Stack
-
-### Frontend
-- **Vite** - Build tool and dev server
-- **React** - UI framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **shadcn/ui** - UI component library
-- **MapLibre GL** - Interactive maps
-- **TanStack Query** - Data fetching and caching
-
-### Backend
-- **FastAPI** - Python web framework
-- **PostgreSQL** - Database
-- **Uvicorn** - ASGI server
-- **Pydantic** - Data validation
-- **psycopg2** - PostgreSQL adapter
-
-## Features
-
-- 🗺️ Interactive global crisis map with real-time visualization
-- 📊 Crisis filtering by category and severity
-- 🎯 Detailed crisis information panels
-- 💰 Direct links to charitable organizations
-- 🔍 Search functionality
-- 📱 Responsive design
+## Overview
+Sankat visualizes global crises on an interactive map and links to relevant charities. Frontend uses React/Vite/MapLibre; backend uses FastAPI/PostgreSQL.
 
 ## Environment Variables
 
-### Frontend (.env)
+Frontend (`.env` in project root):
 ```
 VITE_MAPTILER_KEY=your_maptiler_api_key
 ```
 
-### Backend (backend/.env)
+Backend (`backend/.env`):
 ```
 DB_HOST=localhost
 DB_PORT=5432
@@ -107,14 +21,65 @@ DB_USER=postgres
 DB_PASSWORD=your_password
 ```
 
-## API Endpoints
+## Setup & Run
 
-- `GET /health` - Health check
-- `GET /crises/` - List all crises (with optional filters)
-- `GET /crises/{id}` - Get specific crisis
-- `GET /charities/` - List charities (optionally filtered by crisis)
-- API Documentation: `http://localhost:8000/docs`
+### Frontend
+- Ensure Node.js (>=18) and npm are installed
+- In project root:
+  - `npm install`
+  - Create `.env` and set `VITE_MAPTILER_KEY`
+  - Start dev server: `npm run dev`
+- Server runs at `http://localhost:8080/`
 
-## Contributing
+### Backend
+- Ensure PostgreSQL is installed and running on `localhost:5432`
+- Setup steps:
+  ```bash
+  cd backend
+  
+  # Create and activate virtual environment (optional)
+  python -m venv .venv
+  source .venv/bin/activate  # Linux/Mac
+  # .venv\Scripts\activate   # Windows
+  
+  # Install dependencies
+  pip install -r requirements.txt
+  
+  # Create .env file with DB credentials (copy from .env.example)
+  cp .env.example .env
+  
+  # Initialize database
+  psql -U postgres -d globemap -f database_schema.sql
+  
+  # Seed sample data
+  python seed_data.py
+  
+  # Start the API server (make sure you're in backend/ directory)
+  uvicorn app.main:app --reload --port 8000
+  ```
+- **Note**: If Python 3.13 has compatibility issues with dependencies, use the project root venv:
+  ```bash
+  cd backend
+  /path/to/project/.venv/bin/python -m uvicorn app.main:app --reload --port 8000
+  ```
+- API runs at `http://localhost:8000/` (Docs: `/docs`)
 
-Feel free to submit issues and pull requests!
+## How It Works
+- Frontend (Vite React) requests crisis data from the FastAPI backend
+- MapView uses MapLibre with MapTiler styles to render markers by `latitude/longitude`
+- Filtering/search parameters (`q`, `category`, `severity`) are passed to `/crises/`
+- Selecting a crisis focuses the map and shows details with linked charities
+
+## Key API Endpoints
+- GET /health
+- GET /crises/  (q, category, severity)
+- GET /crises/{id}
+- GET /charities/  (crisis_id)
+
+## Tech Stack
+Frontend: React, Vite, TypeScript, Tailwind, MapLibre
+Backend: FastAPI, PostgreSQL, Uvicorn, Pydantic, psycopg2
+
+## Notes
+- Map tiles require a valid MapTiler key.
+- Database must be running and seeded (see `backend/database_schema.sql` and `backend/seed_data.py`).

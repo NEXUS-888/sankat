@@ -1,19 +1,64 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Crisis, Charity, FilterState, Category, Severity } from '@/types';
-import { mockCrises, mockCharities } from '@/data/mockData';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export function useCrises() {
-  const [crises] = useState<Crisis[]>(mockCrises);
-  const [charities] = useState<Charity[]>(mockCharities);
+  const [crises, setCrises] = useState<Crisis[]>([]);
+  const [charities, setCharities] = useState<Charity[]>([]);
   const [selectedCrisis, setSelectedCrisis] = useState<Crisis | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
     category: null,
     severity: null,
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch crises from API
+  useEffect(() => {
+    const fetchCrises = async () => {
+      setIsLoading(true);
+      try {
+        console.log('Fetching crises from:', `${API_URL}/crises/`);
+        const response = await fetch(`${API_URL}/crises/`);
+        if (response.ok) {
+          const data = await response.json();
+          // API returns { crises: [...] } so extract the array
+          const crisesArray = Array.isArray(data) ? data : data.crises || [];
+          console.log('Fetched crises:', crisesArray.length);
+          setCrises(crisesArray);
+        } else {
+          console.error('Failed to fetch crises:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching crises:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCrises();
+  }, []);
+
+  // Fetch charities from API
+  useEffect(() => {
+    const fetchCharities = async () => {
+      try {
+        const response = await fetch(`${API_URL}/charities/`);
+        if (response.ok) {
+          const data = await response.json();
+          // API returns { charities: [...] } so extract the array
+          setCharities(Array.isArray(data) ? data : data.charities || []);
+        } else {
+          console.error('Failed to fetch charities:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Error fetching charities:', error);
+      }
+    };
+
+    fetchCharities();
+  }, []);
 
   const filteredCrises = useMemo(() => {
     return crises.filter((crisis) => {
