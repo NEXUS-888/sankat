@@ -20,6 +20,8 @@ from .models import (
     UserLogin,
     Token,
     UserResponse,
+    CreatePaymentIntent,
+    PaymentIntentResponse,
 )
 from .database import (
     fetch_crises,
@@ -37,6 +39,11 @@ from .auth import (
     generate_csrf_token,
     store_csrf_token,
     verify_csrf,
+)
+from .payments import (
+    create_donation_payment,
+    retrieve_payment_intent,
+    verify_webhook_signature,
 )
 
 # Create FastAPI app
@@ -319,6 +326,88 @@ async def refresh_token(response: Response, request: Request, current_user: dict
         "message": "Token refreshed",
         "csrf_token": csrf_token,
     }
+
+
+# ============================================
+# Payment Routes
+# ============================================
+
+@app.post("/payments/create-intent", response_model=PaymentIntentResponse, tags=["Payments"])
+async def create_payment_intent_endpoint(
+    payment_data: CreatePaymentIntent,
+    request: Request,
+):
+    """
+    Create a Stripe payment intent for donation.
+    
+    - **amount**: Donation amount in cents (e.g., 1000 = $10.00)
+    - **crisis_id**: ID of the crisis to support
+    - **charity_id**: Optional specific charity to donate to
+    - **donor_email**: Optional donor email for receipt
+    - **donor_name**: Optional donor name
+    """
+    try:
+        # Verify CSRF for authenticated users (optional for donations)
+        # For public donations, you may want to skip CSRF
+        
+        # Create payment intent
+        payment_intent = create_donation_payment(
+            amount=payment_data.amount,
+            crisis_id=payment_data.crisis_id,
+            charity_id=payment_data.charity_id,
+            donor_email=payment_data.donor_email,
+            donor_name=payment_data.donor_name,
+        )
+        
+        return PaymentIntentResponse(**payment_intent)
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Payment creation failed: {str(e)}")
+
+
+@app.get("/payments/status/{payment_intent_id}", tags=["Payments"])
+async def get_payment_status(payment_intent_id: str):
+    """
+    Get the status of a payment intent.
+    """
+    try:
+        payment_intent = retrieve_payment_intent(payment_intent_id)
+        return payment_intent
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"Payment not found: {str(e)}")
+
+
+@app.post("/payments/webhook", tags=["Payments"])
+async def stripe_webhook(request: Request):
+    """
+    Webhook endpoint for Stripe events.
+    Handles payment confirmations and updates.
+    """
+    payload = await request.body()
+    signature = request.headers.get("stripe-signature")
+    
+    if not signature:
+        raise HTTPException(status_code=400, detail="Missing Stripe signature")
+    
+    try:
+        event = verify_webhook_signature(payload, signature)
+        
+        # Handle different event types
+        if event["type"] == "payment_intent.succeeded":
+            payment_intent = event["data"]["object"]
+            # TODO: Record successful donation in database
+            print(f"✅ Payment succeeded: {payment_intent['id']}")
+            print(f"   Amount: ${payment_intent['amount'] / 100}")
+            print(f"   Crisis ID: {payment_intent['metadata'].get('crisis_id')}")
+            
+        elif event["type"] == "payment_intent.payment_failed":
+            payment_intent = event["data"]["object"]
+            print(f"❌ Payment failed: {payment_intent['id']}")
+            
+        return {"status": "success"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Webhook error: {str(e)}")
 
 
 if __name__ == "__main__":

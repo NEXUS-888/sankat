@@ -93,3 +93,45 @@ class CharityListResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str = "ok"
+
+
+# Payment Models
+class CreatePaymentIntent(BaseModel):
+    """Create payment intent request."""
+    amount: int  # Amount in cents (e.g., 1000 = $10.00)
+    crisis_id: int
+    charity_id: Optional[int] = None
+    donor_email: Optional[EmailStr] = None
+    donor_name: Optional[str] = None
+
+
+class PaymentIntentResponse(BaseModel):
+    """Payment intent response."""
+    client_secret: str
+    payment_intent_id: str
+    amount: int
+    currency: str
+    status: str
+
+
+class WebhookEvent(BaseModel):
+    """Stripe webhook event."""
+    type: str
+    data: dict
+
+
+class DonationRecord(BaseModel):
+    """Donation record for database storage."""
+    id: int
+    payment_intent_id: str
+    crisis_id: int
+    charity_id: Optional[int]
+    amount: int
+    currency: str
+    status: str
+    donor_email: Optional[str]
+    donor_name: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

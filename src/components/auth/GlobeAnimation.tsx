@@ -195,9 +195,9 @@ export const GlobeAnimation = () => {
       />
       
       {/* Clean stat bubbles with soft float animation */}
-      <div className="absolute bottom-8 left-8 right-8 flex flex-col gap-3 z-20">
+      <div className="absolute bottom-8 right-8 w-80 flex flex-col gap-3 z-20">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, x: 20 }}
           animate={{ 
             opacity: 1, 
             y: [0, -5, 0],
@@ -213,7 +213,7 @@ export const GlobeAnimation = () => {
         </motion.div>
         
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, x: 20 }}
           animate={{ 
             opacity: 1, 
             y: [0, -5, 0],
@@ -229,7 +229,7 @@ export const GlobeAnimation = () => {
         </motion.div>
         
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, x: 20 }}
           animate={{ 
             opacity: 1, 
             y: [0, -5, 0],

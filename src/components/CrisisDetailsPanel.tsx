@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { X, MapPin, Calendar, AlertTriangle, ExternalLink, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Crisis, Charity, Category, Severity } from '@/types';
 import { cn } from '@/lib/utils';
+import { DonationModal } from '@/components/DonationModal';
 
 const categoryColors: Record<Category, string> = {
   Conflict: 'bg-category-conflict/20 text-category-conflict',
@@ -26,8 +28,27 @@ interface CrisisDetailsPanelProps {
 
 export function CrisisDetailsPanel({ crisis, charities, onClose }: CrisisDetailsPanelProps) {
   const severityInfo = severityConfig[crisis.severity];
+  const [selectedCharity, setSelectedCharity] = useState<Charity | null>(null);
+  const [showDonation, setShowDonation] = useState(false);
+
+  const handleDonateClick = (charity: Charity) => {
+    setSelectedCharity(charity);
+    setShowDonation(true);
+  };
 
   return (
+    <>
+      <DonationModal
+        isOpen={showDonation}
+        onClose={() => {
+          setShowDonation(false);
+          setSelectedCharity(null);
+        }}
+        crisisId={crisis.id}
+        crisisTitle={crisis.title}
+        charityId={selectedCharity?.id}
+        charityName={selectedCharity?.name}
+      />
     <div className="glass-strong rounded-2xl h-full flex flex-col animate-slide-in-right">
       {/* Header */}
       <div className="p-4 border-b border-border/30">
@@ -91,19 +112,31 @@ export function CrisisDetailsPanel({ crisis, charities, onClose }: CrisisDetails
                 <p className="text-xs text-muted-foreground mb-3">
                   {charity.description}
                 </p>
-                <Button
-                  size="sm"
-                  className="w-full bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-500/90 text-primary-foreground"
-                  onClick={() => window.open(charity.donation_url, '_blank')}
-                >
-                  <ExternalLink className="w-3.5 h-3.5 mr-2" />
-                  Donate Now
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-500/90 text-primary-foreground"
+                    onClick={() => handleDonateClick(charity)}
+                  >
+                    <Heart className="w-3.5 h-3.5 mr-2" />
+                    Donate via Stripe
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="px-3"
+                    onClick={() => window.open(charity.donation_url, '_blank')}
+                    title="Visit charity website"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
