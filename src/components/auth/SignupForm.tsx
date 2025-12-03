@@ -35,8 +35,8 @@ export const SignupForm = ({ onSuccess, onSwitchToLogin }: SignupFormProps) => {
     setLoading(true);
 
     try {
-      const data = await authAPI.register(email, password);
-      localStorage.setItem('auth_token', data.access_token);
+      await authAPI.register(email, password);
+      // Server sets httpOnly cookie, no localStorage needed
       onSuccess();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Signup failed. Please try again.');

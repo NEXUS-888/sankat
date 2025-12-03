@@ -5,7 +5,8 @@ from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
 import bcrypt
-from fastapi import Depends, HTTPException, status
+import secrets
+from fastapi import Depends, HTTPException, status, Request, Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import os
 from dotenv import load_dotenv
@@ -17,8 +18,16 @@ SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
-# HTTP Bearer token security
-security = HTTPBearer()
+# Cookie Configuration
+COOKIE_NAME = "auth_token"
+COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
+
+# CSRF Configuration
+CSRF_TOKEN_LENGTH = 32
+csrf_tokens = {}  # In production, use Redis or a proper session store
+
+# HTTP Bearer token security (kept for backward compatibility)
+security = HTTPBearer(auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -63,9 +72,64 @@ def decode_token(token: str) -> dict:
         )
 
 
-async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> dict:
-    """Dependency to get the current user from JWT token"""
-    token = credentials.credentials
+def set_auth_cookie(response: Response, token: str) -> None:
+    """Set httpOnly authentication cookie"""
+    response.set_cookie(
+        key=COOKIE_NAME,
+        value=token,
+        max_age=COOKIE_MAX_AGE,
+        httponly=True,  # Prevents JavaScript access (XSS protection)
+        secure=False,    # Set to True in production with HTTPS
+        samesite="lax",  # CSRF protection
+        path="/",
+    )
+
+
+def clear_auth_cookie(response: Response) -> None:
+    """Clear authentication cookie"""
+    response.delete_cookie(
+        key=COOKIE_NAME,
+        path="/",
+    )
+
+
+def generate_csrf_token() -> str:
+    """Generate a new CSRF token"""
+    return secrets.token_hex(CSRF_TOKEN_LENGTH)
+
+
+def store_csrf_token(token: str, user_id: int) -> None:
+    """Store CSRF token (in production, use Redis or session store)"""
+    csrf_tokens[token] = user_id
+
+
+def validate_csrf_token(token: str, user_id: int) -> bool:
+    """Validate CSRF token"""
+    return csrf_tokens.get(token) == user_id
+
+
+def get_token_from_cookie(request: Request) -> Optional[str]:
+    """Extract JWT token from httpOnly cookie"""
+    return request.cookies.get(COOKIE_NAME)
+
+
+async def get_current_user(request: Request) -> dict:
+    """Dependency to get the current user from JWT token in cookie"""
+    # Try to get token from cookie first
+    token = get_token_from_cookie(request)
+    
+    # Fallback to Authorization header for backward compatibility
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.replace("Bearer ", "")
+    
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+        )
+    
     payload = decode_token(token)
     
     user_id: int = payload.get("user_id")
@@ -75,7 +139,23 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
-            headers={"WWW-Authenticate": "Bearer"},
         )
     
     return {"user_id": user_id, "email": email}
+
+
+def verify_csrf(request: Request, current_user: dict) -> None:
+    """Verify CSRF token for state-changing requests"""
+    csrf_token = request.headers.get("X-CSRF-Token")
+    
+    if not csrf_token:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF token missing",
+        )
+    
+    if not validate_csrf_token(csrf_token, current_user["user_id"]):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid CSRF token",
+        )

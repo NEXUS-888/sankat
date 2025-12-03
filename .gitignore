@@ -1,24 +1,151 @@
+# ============================================
+# SENSITIVE DATA - NEVER COMMIT THESE FILES
+# ============================================
+
+# Environment variables with secrets
+.env
+.env.local
+.env.development
+.env.production
+.env.*.local
+*.env
+
+# Python virtual environment
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Database files and backups
+*.db
+*.sqlite
+*.sqlite3
+*.sql.backup
+*.dump
+
+# Private keys and certificates
+*.pem
+*.key
+*.cert
+*.crt
+*.p12
+*.pfx
+id_rsa
+id_rsa.pub
+
+# Configuration files with credentials
+config/secrets.json
+config/credentials.json
+secrets.yaml
+credentials.yaml
+
+# Session and cookie files
+cookies.txt
+*.cookie
+session.json
+
+# AWS credentials
+.aws/
+aws-credentials.txt
+
+# API keys and tokens
+api-keys.txt
+*.token
+.secrets
+
+# ============================================
+# BUILD OUTPUT & DEPENDENCIES
+# ============================================
+
+# Node.js
+node_modules/
+dist/
+dist-ssr/
+build/
+*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+*.egg
+**/__pycache__/
+
 # Logs
-logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+pip-log.txt
 
-node_modules
-dist
-dist-ssr
-*.local
+# ============================================
+# EDITOR & IDE FILES
+# ============================================
 
-# Editor directories and files
+# VS Code
 .vscode/*
 !.vscode/extensions.json
-.idea
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Other editors
 .DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*~
+
+# ============================================
+# TESTING & COVERAGE
+# ============================================
+
+# Coverage reports
+coverage/
+.coverage
+.coverage.*
+htmlcov/
+.nyc_output/
+*.lcov
+
+# Test databases
+test.db
+test.sqlite
+test_*.sql
+
+# ============================================
+# TEMPORARY FILES
+# ============================================
+
+# OS files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+.cache/
+
+# Lock files (keep package-lock.json, remove others)
+bun.lockb.backup
+yarn.lock.backup

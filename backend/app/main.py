@@ -5,7 +5,7 @@ Main application entry point.
 
 from typing import Optional, List
 
-from fastapi import FastAPI, HTTPException, Query, Depends
+from fastapi import FastAPI, HTTPException, Query, Depends, Response, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .models import (
@@ -32,6 +32,11 @@ from .auth import (
     verify_password,
     create_access_token,
     get_current_user,
+    set_auth_cookie,
+    clear_auth_cookie,
+    generate_csrf_token,
+    store_csrf_token,
+    verify_csrf,
 )
 
 # Create FastAPI app
@@ -131,11 +136,11 @@ async def get_charities_by_crisis(crisis_id: int):
 
 # ============ Authentication Routes ============
 
-@app.post("/auth/register", response_model=Token, tags=["Authentication"])
-async def register(user: UserRegister):
+@app.post("/auth/register", tags=["Authentication"])
+async def register(user: UserRegister, response: Response):
     """
     Register a new user with email and password.
-    Returns a JWT access token upon successful registration.
+    Sets an httpOnly cookie with JWT token upon successful registration.
     """
     from .database import get_db_connection
     
@@ -161,10 +166,19 @@ async def register(user: UserRegister):
             
             cursor.close()
         
-        # Create access token
+        # Create access token and set httpOnly cookie
         access_token = create_access_token(data={"user_id": user_id, "email": user.email})
+        set_auth_cookie(response, access_token)
         
-        return {"access_token": access_token, "token_type": "bearer"}
+        # Generate CSRF token
+        csrf_token = generate_csrf_token()
+        store_csrf_token(csrf_token, user_id)
+        
+        return {
+            "message": "Registration successful",
+            "user": {"id": user_id, "email": user.email},
+            "csrf_token": csrf_token,
+        }
         
     except HTTPException:
         raise
@@ -172,11 +186,11 @@ async def register(user: UserRegister):
         raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
 
 
-@app.post("/auth/login", response_model=Token, tags=["Authentication"])
-async def login(user: UserLogin):
+@app.post("/auth/login", tags=["Authentication"])
+async def login(user: UserLogin, response: Response):
     """
     Login with email and password.
-    Returns a JWT access token upon successful authentication.
+    Sets an httpOnly cookie with JWT token upon successful authentication.
     """
     from .database import get_db_connection
     
@@ -207,10 +221,19 @@ async def login(user: UserLogin):
                 detail="Invalid email or password"
             )
         
-        # Create access token
+        # Create access token and set httpOnly cookie
         access_token = create_access_token(data={"user_id": user_id, "email": email})
+        set_auth_cookie(response, access_token)
         
-        return {"access_token": access_token, "token_type": "bearer"}
+        # Generate CSRF token
+        csrf_token = generate_csrf_token()
+        store_csrf_token(csrf_token, user_id)
+        
+        return {
+            "message": "Login successful",
+            "user": {"id": user_id, "email": email},
+            "csrf_token": csrf_token,
+        }
         
     except HTTPException:
         raise
@@ -219,10 +242,10 @@ async def login(user: UserLogin):
 
 
 @app.get("/auth/me", response_model=UserResponse, tags=["Authentication"])
-async def get_current_user_info(current_user: dict = Depends(get_current_user)):
+async def get_current_user_info(request: Request, current_user: dict = Depends(get_current_user)):
     """
     Get current authenticated user's information.
-    Requires a valid JWT token in the Authorization header.
+    Requires a valid JWT token in httpOnly cookie.
     """
     from .database import get_db_connection
     
@@ -248,6 +271,54 @@ async def get_current_user_info(current_user: dict = Depends(get_current_user)):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch user: {str(e)}")
+
+
+@app.get("/auth/csrf-token", tags=["Authentication"])
+async def get_csrf_token(request: Request, current_user: dict = Depends(get_current_user)):
+    """
+    Get a CSRF token for the authenticated user.
+    This token must be included in X-CSRF-Token header for state-changing requests.
+    """
+    csrf_token = generate_csrf_token()
+    store_csrf_token(csrf_token, current_user["user_id"])
+    
+    return {"csrf_token": csrf_token}
+
+
+@app.post("/auth/logout", tags=["Authentication"])
+async def logout(response: Response, request: Request, current_user: dict = Depends(get_current_user)):
+    """
+    Logout the current user by clearing the authentication cookie.
+    """
+    # Verify CSRF token
+    verify_csrf(request, current_user)
+    
+    # Clear authentication cookie
+    clear_auth_cookie(response)
+    
+    return {"message": "Logout successful"}
+
+
+@app.post("/auth/refresh", tags=["Authentication"])
+async def refresh_token(response: Response, request: Request, current_user: dict = Depends(get_current_user)):
+    """
+    Refresh the authentication token.
+    Issues a new JWT token in httpOnly cookie.
+    """
+    # Create new access token
+    access_token = create_access_token(
+        data={"user_id": current_user["user_id"], "email": current_user["email"]}
+    )
+    set_auth_cookie(response, access_token)
+    
+    # Generate new CSRF token
+    csrf_token = generate_csrf_token()
+    store_csrf_token(csrf_token, current_user["user_id"])
+    
+    return {
+        "message": "Token refreshed",
+        "csrf_token": csrf_token,
+    }
 
 
 if __name__ == "__main__":
