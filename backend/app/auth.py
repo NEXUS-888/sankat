@@ -14,7 +14,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # JWT Configuration
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-this-in-production")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY environment variable not set")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
@@ -24,8 +26,7 @@ COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
 
 # CSRF Configuration
 CSRF_TOKEN_LENGTH = 32
-csrf_tokens = {}  # In production, use Redis or a proper session store
-
+CSRF_COOKIE_NAME = "csrf_token"
 # HTTP Bearer token security (kept for backward compatibility)
 security = HTTPBearer(auto_error=False)
 
@@ -85,6 +86,19 @@ def set_auth_cookie(response: Response, token: str) -> None:
     )
 
 
+def set_csrf_cookie(response: Response, csrf_token: str) -> None:
+    """Set CSRF token cookie"""
+    response.set_cookie(
+        key=CSRF_COOKIE_NAME,
+        value=csrf_token,
+        max_age=COOKIE_MAX_AGE,
+        httponly=False, # Allow JS to read this cookie
+        secure=False,   # Set to True in production with HTTPS
+        samesite="lax",
+        path="/",
+    )
+
+
 def clear_auth_cookie(response: Response) -> None:
     """Clear authentication cookie"""
     response.delete_cookie(
@@ -93,19 +107,17 @@ def clear_auth_cookie(response: Response) -> None:
     )
 
 
+def clear_csrf_cookie(response: Response) -> None:
+    """Clear CSRF cookie"""
+    response.delete_cookie(
+        key=CSRF_COOKIE_NAME,
+        path="/",
+    )
+
+
 def generate_csrf_token() -> str:
     """Generate a new CSRF token"""
     return secrets.token_hex(CSRF_TOKEN_LENGTH)
-
-
-def store_csrf_token(token: str, user_id: int) -> None:
-    """Store CSRF token (in production, use Redis or session store)"""
-    csrf_tokens[token] = user_id
-
-
-def validate_csrf_token(token: str, user_id: int) -> bool:
-    """Validate CSRF token"""
-    return csrf_tokens.get(token) == user_id
 
 
 def get_token_from_cookie(request: Request) -> Optional[str]:
@@ -144,17 +156,24 @@ async def get_current_user(request: Request) -> dict:
     return {"user_id": user_id, "email": email}
 
 
-def verify_csrf(request: Request, current_user: dict) -> None:
-    """Verify CSRF token for state-changing requests"""
-    csrf_token = request.headers.get("X-CSRF-Token")
-    
-    if not csrf_token:
+def verify_csrf(request: Request) -> None:
+    """Verify CSRF token for state-changing requests using double submit cookie pattern."""
+    csrf_token_header = request.headers.get("X-CSRF-Token")
+    csrf_token_cookie = request.cookies.get(CSRF_COOKIE_NAME)
+
+    if not csrf_token_header:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="CSRF token missing",
+            detail="CSRF token missing from header",
         )
-    
-    if not validate_csrf_token(csrf_token, current_user["user_id"]):
+
+    if not csrf_token_cookie:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF token missing from cookie",
+        )
+
+    if not secrets.compare_digest(csrf_token_header, csrf_token_cookie):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid CSRF token",

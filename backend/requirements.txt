@@ -1,13 +1,22 @@
 # FastAPI Backend Requirements
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
-psycopg2-binary==2.9.9
+
+# Database - Using psycopg3 (modern async-ready PostgreSQL adapter)
+psycopg[binary]==3.3.1
+
+# Data validation and settings
 pydantic==2.5.3
 python-dotenv==1.0.0
+email-validator==2.1.0
+
+# Authentication & Security
 python-jose[cryptography]==3.3.0
 passlib[bcrypt]==1.7.4
+bcrypt==4.1.0
+
+# File uploads
 python-multipart==0.0.6
-email-validator==2.1.0
 
 # Payment Processing
 stripe==14.0.1

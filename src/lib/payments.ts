@@ -21,7 +21,7 @@ export const paymentsAPI = {
    * Create a payment intent for donation
    */
   createPaymentIntent: async (data: CreatePaymentIntentRequest): Promise<PaymentIntentResponse> => {
-    const response = await api.post('/payments/create-intent', data);
+    const response = await api.post('/api/payments/create-intent', data);
     return response.data;
   },
 
@@ -29,7 +29,7 @@ export const paymentsAPI = {
    * Get payment status
    */
   getPaymentStatus: async (paymentIntentId: string) => {
-    const response = await api.get(`/payments/status/${paymentIntentId}`);
+    const response = await api.get(`/api/payments/status/${paymentIntentId}`);
     return response.data;
   },
 };

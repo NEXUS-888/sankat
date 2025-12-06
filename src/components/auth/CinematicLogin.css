@@ -1,0 +1,301 @@
+:root {
+  /* Color Palette */
+  --color-navy-deep: #0a0e1a;
+  --color-navy: #0f172a;
+  --color-indigo: #1e293b;
+  --color-teal: #06b6d4;
+  --color-blue: #3b82f6;
+  --color-cyan: #22d3ee;
+  --color-red: #ef4444;
+  --color-orange: #f59e0b;
+  
+  /* Glass Effects */
+  --glass-bg: rgba(15, 23, 42, 0.4);
+  --glass-border: rgba(59, 130, 246, 0.2);
+  --glass-blur: 20px;
+  
+  /* Shadows & Glows */
+  --shadow-glow-blue: 0 0 40px rgba(59, 130, 246, 0.3);
+  --shadow-glow-cyan: 0 0 40px rgba(34, 211, 238, 0.3);
+  --shadow-depth: 0 20px 60px rgba(0, 0, 0, 0.5);
+  
+  /* Animations */
+  --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-elastic: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.cinematic-login-wrapper {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--color-navy-deep) 0%, #000814 100%);
+}
+
+/* Background Effects */
+.starfield-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, white, transparent),
+    radial-gradient(2px 2px at 60px 70px, white, transparent),
+    radial-gradient(1px 1px at 50px 50px, white, transparent),
+    radial-gradient(1px 1px at 130px 80px, white, transparent),
+    radial-gradient(2px 2px at 90px 10px, white, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: starfield-drift 200s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes starfield-drift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-200px);
+  }
+}
+
+.volumetric-haze {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(ellipse at 30% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
+  animation: haze-pulse 10s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes haze-pulse {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.grid-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+  background-size: 50px 50px;
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* Main Container */
+.cinematic-container {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  padding: 4rem;
+  gap: 4rem;
+  z-index: 1;
+}
+
+/* Earth Panel (Left Side) */
+.earth-panel {
+  flex: 0 0 55%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  transition: transform 0.1s ease-out;
+}
+
+.earth-scene-wrapper {
+  position: relative;
+  width: 100%;
+  height: 70%;
+  border-radius: 20px;
+  overflow: hidden;
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+}
+
+/* Feature Cards */
+.feature-cards-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Login Panel (Right Side) */
+.login-panel {
+  flex: 0 0 45%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease-out;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 500px;
+  animation: card-float 6s ease-in-out infinite;
+}
+
+@keyframes card-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* Login Header */
+.login-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.logo-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+.logo-glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.4) 0%, transparent 70%);
+  border-radius: 50%;
+  animation: logo-pulse 3s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+.logo-text {
+  position: relative;
+  font-size: 3rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #3b82f6 0%, #22d3ee 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 0.2em;
+  text-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+}
+
+.login-title {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.login-subtitle {
+  font-size: 0.95rem;
+  color: #94a3b8;
+  font-weight: 300;
+  letter-spacing: 0.05em;
+}
+
+/* Tabs */
+.auth-tabs {
+  margin-bottom: 2rem;
+}
+
+.tabs-wrapper {
+  position: relative;
+  display: flex;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 12px;
+  padding: 4px;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.tab-button {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-smooth);
+  position: relative;
+  z-index: 2;
+}
+
+.tab-button.active {
+  color: #e2e8f0;
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  height: calc(100% - 8px);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3) 0%, rgba(34, 211, 238, 0.3) 100%);
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+  z-index: 1;
+}
+
+/* Auth Forms Container */
+.auth-forms {
+  min-height: 400px;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .cinematic-container {
+    flex-direction: column;
+    padding: 2rem;
+  }
+  
+  .earth-panel,
+  .login-panel {
+    flex: 1;
+  }
+  
+  .earth-scene-wrapper {
+    height: 400px;
+  }
+}
+
+@media (max-width: 768px) {
+  .cinematic-container {
+    padding: 1rem;
+  }
+  
+  .logo-text {
+    font-size: 2rem;
+  }
+  
+  .login-title {
+    font-size: 1.5rem;
+  }
+  
+  .earth-scene-wrapper {
+    height: 300px;
+  }
+  
+  .feature-cards-container {
+    flex-direction: column;
+  }
+}

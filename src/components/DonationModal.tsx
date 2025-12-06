@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Elements } from '@stripe/react-stripe-js';
 import { getStripe, isStripeConfigured } from '@/lib/stripe';
-import { PaymentForm } from './PaymentForm';
+import { PaymentForm } from './PaymentFormSimple';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
@@ -23,6 +23,19 @@ export const DonationModal = ({
   onClose,
 }: DonationModalProps) => {
   const [stripeConfigured] = useState(isStripeConfigured());
+  const [stripePromise] = useState(() => getStripe());
+
+  // Reset scroll when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -56,15 +69,14 @@ export const DonationModal = ({
         {/* Content */}
         <div className="p-8">
           {stripeConfigured ? (
-            <Elements stripe={getStripe()}>
-              <PaymentForm
-                crisisId={crisisId}
-                charityId={charityId}
-                onSuccess={() => {
-                  setTimeout(onClose, 2000); // Close after 2 seconds on success
-                }}
-              />
-            </Elements>
+            <PaymentForm
+              crisisId={crisisId}
+              charityId={charityId}
+              stripePromise={stripePromise}
+              onSuccess={() => {
+                setTimeout(onClose, 2000); // Close after 2 seconds on success
+              }}
+            />
           ) : (
             <Alert className="bg-yellow-500/10 border-yellow-500/20">
               <AlertCircle className="h-5 w-5 text-yellow-500" />

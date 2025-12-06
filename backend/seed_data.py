@@ -5,7 +5,7 @@ Populates the database with sample crisis and charity data.
 """
 
 import os
-import psycopg2
+import psycopg
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -1017,13 +1017,14 @@ CHARITIES = [
 
 def get_connection():
     """Create database connection from environment variables."""
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST", "localhost"),
-        port=os.getenv("DB_PORT", "5432"),
-        database=os.getenv("DB_NAME", "globemap"),
-        user=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD", "postgres")
-    )
+    host = os.getenv("DB_HOST", "localhost")
+    port = os.getenv("DB_PORT", "5432")
+    database = os.getenv("DB_NAME", "globemap")
+    user = os.getenv("DB_USER", "postgres")
+    password = os.getenv("DB_PASSWORD", "postgres")
+    
+    conn_string = f"host={host} port={port} dbname={database} user={user} password={password}"
+    return psycopg.connect(conn_string)
 
 
 def seed_database():

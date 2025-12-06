@@ -135,3 +135,28 @@ class DonationRecord(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class UserDonationResponse(BaseModel):
+    """User donation with crisis and charity details for dashboard."""
+    id: int
+    amount: int
+    currency: str
+    created_at: datetime
+    crisis_title: str
+    crisis_country: str
+    charity_name: str
+
+    class Config:
+        from_attributes = True
+
+
+class UserDonationSummary(BaseModel):
+    """Summary of user's donation statistics."""
+    total_amount: int
+    currency: str
+    crisis_count: int
+    charity_count: int
+
+    class Config:
+        from_attributes = True

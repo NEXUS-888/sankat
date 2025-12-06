@@ -126,6 +126,7 @@ def create_donation_payment(
     charity_id: Optional[int] = None,
     donor_email: Optional[str] = None,
     donor_name: Optional[str] = None,
+    user_id: Optional[int] = None,
 ) -> dict:
     """
     Create a payment intent for crisis donation
@@ -136,6 +137,7 @@ def create_donation_payment(
         charity_id: Optional charity ID if donating to specific organization
         donor_email: Donor email address
         donor_name: Donor name
+        user_id: User ID for tracking donations
     
     Returns:
         Payment intent with client_secret
@@ -151,6 +153,8 @@ def create_donation_payment(
         metadata["donor_email"] = donor_email
     if donor_name:
         metadata["donor_name"] = donor_name
+    if user_id:
+        metadata["user_id"] = str(user_id)
     
     return create_payment_intent(
         amount=amount,

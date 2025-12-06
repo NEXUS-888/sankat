@@ -42,25 +42,23 @@ const Index = ({ onLogout }: IndexProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header>
+      <Header showNavigation>
         {onLogout && (
-          <Button
+          <button
             onClick={onLogout}
-            variant="outline"
-            size="sm"
-            className="gap-2"
+            className="border border-white/10 rounded-md px-3 py-1.5 text-sm text-slate-300 hover:border-white/20 hover:bg-white/5 transition-all duration-200 flex items-center gap-2"
           >
             <LogOut className="h-4 w-4" />
-            Logout
-          </Button>
+            <span className="hidden sm:inline">Logout</span>
+          </button>
         )}
       </Header>
       
-      <main className="pt-16 h-screen flex flex-col lg:flex-row">
+      <main className="pt-16 h-screen flex flex-col lg:flex-row overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-full lg:w-96 xl:w-[420px] h-[40vh] lg:h-full border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col bg-background/50 backdrop-blur-sm">
+        <aside className="w-full lg:w-96 xl:w-[420px] h-[40vh] lg:h-full border-b lg:border-b-0 lg:border-r border-white/5 flex flex-col bg-[#0b1220]/90 backdrop-blur-sm">
           {/* Filters */}
-          <div className="p-4 border-b border-border/30">
+          <div className="p-4 border-b border-white/5">
             <FiltersBar
               search={filters.search}
               onSearchChange={updateSearch}
@@ -73,7 +71,7 @@ const Index = ({ onLogout }: IndexProps) => {
           </div>
           
           {/* Crisis List */}
-          <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
+          <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent p-4">
             <CrisisList
               crises={crises}
               selectedCrisis={selectedCrisis}
@@ -84,9 +82,9 @@ const Index = ({ onLogout }: IndexProps) => {
         </aside>
 
         {/* Map + Details */}
-        <div className="flex-1 relative flex">
+        <div className="flex-1 relative flex overflow-hidden">
           {/* Map */}
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 border-r border-white/5 overflow-hidden">
             <MapView
               crises={crises}
               selectedCrisis={selectedCrisis}
@@ -94,16 +92,15 @@ const Index = ({ onLogout }: IndexProps) => {
             />
           </div>
 
-          {/* Details Panel - Desktop */}
-          {selectedCrisis && (
-            <div className="hidden lg:block w-96 xl:w-[420px] p-4 pl-0">
-              <CrisisDetailsPanel
-                crisis={selectedCrisis}
-                charities={getCharitiesForCrisis(selectedCrisis.id)}
-                onClose={handleCloseDetails}
-              />
-            </div>
-          )}
+          {/* Details Panel - Desktop (always visible) */}
+          <div className="hidden lg:block w-96 xl:w-[420px] p-4 overflow-hidden">
+            <CrisisDetailsPanel
+              crisis={selectedCrisis}
+              charities={selectedCrisis ? getCharitiesForCrisis(selectedCrisis.id) : []}
+              onClose={handleCloseDetails}
+              isLoading={isLoading && selectedCrisis !== null}
+            />
+          </div>
         </div>
 
         {/* Mobile Details Sheet */}

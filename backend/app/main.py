@@ -22,12 +22,17 @@ from .models import (
     UserResponse,
     CreatePaymentIntent,
     PaymentIntentResponse,
+    UserDonationResponse,
+    UserDonationSummary,
 )
 from .database import (
     fetch_crises,
     fetch_crisis_by_id,
     fetch_charities,
     fetch_charities_by_crisis,
+    create_donation_record,
+    fetch_user_donations,
+    fetch_user_donation_summary,
 )
 from .auth import (
     hash_password,
@@ -37,7 +42,8 @@ from .auth import (
     set_auth_cookie,
     clear_auth_cookie,
     generate_csrf_token,
-    store_csrf_token,
+    set_csrf_cookie,
+    clear_csrf_cookie,
     verify_csrf,
 )
 from .payments import (
@@ -53,16 +59,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Configure CORS for frontend access
+# Configure CORS for same-origin setup (frontend on port 8080 proxies to backend)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:8080",  # Alternative Vite port
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:8080",
-        "http://127.0.0.1:3000",
+        "http://localhost:8080",  # Vite dev server with proxy
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -179,7 +180,7 @@ async def register(user: UserRegister, response: Response):
         
         # Generate CSRF token
         csrf_token = generate_csrf_token()
-        store_csrf_token(csrf_token, user_id)
+        set_csrf_cookie(response, csrf_token)
         
         return {
             "message": "Registration successful",
@@ -234,7 +235,7 @@ async def login(user: UserLogin, response: Response):
         
         # Generate CSRF token
         csrf_token = generate_csrf_token()
-        store_csrf_token(csrf_token, user_id)
+        set_csrf_cookie(response, csrf_token)
         
         return {
             "message": "Login successful",
@@ -281,13 +282,13 @@ async def get_current_user_info(request: Request, current_user: dict = Depends(g
 
 
 @app.get("/auth/csrf-token", tags=["Authentication"])
-async def get_csrf_token(request: Request, current_user: dict = Depends(get_current_user)):
+async def get_csrf_token(response: Response, request: Request, current_user: dict = Depends(get_current_user)):
     """
     Get a CSRF token for the authenticated user.
     This token must be included in X-CSRF-Token header for state-changing requests.
     """
     csrf_token = generate_csrf_token()
-    store_csrf_token(csrf_token, current_user["user_id"])
+    set_csrf_cookie(response, csrf_token)
     
     return {"csrf_token": csrf_token}
 
@@ -298,10 +299,11 @@ async def logout(response: Response, request: Request, current_user: dict = Depe
     Logout the current user by clearing the authentication cookie.
     """
     # Verify CSRF token
-    verify_csrf(request, current_user)
+    verify_csrf(request)
     
     # Clear authentication cookie
     clear_auth_cookie(response)
+    clear_csrf_cookie(response)
     
     return {"message": "Logout successful"}
 
@@ -320,7 +322,7 @@ async def refresh_token(response: Response, request: Request, current_user: dict
     
     # Generate new CSRF token
     csrf_token = generate_csrf_token()
-    store_csrf_token(csrf_token, current_user["user_id"])
+    set_csrf_cookie(response, csrf_token)
     
     return {
         "message": "Token refreshed",
@@ -336,6 +338,7 @@ async def refresh_token(response: Response, request: Request, current_user: dict
 async def create_payment_intent_endpoint(
     payment_data: CreatePaymentIntent,
     request: Request,
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Create a Stripe payment intent for donation.
@@ -347,9 +350,6 @@ async def create_payment_intent_endpoint(
     - **donor_name**: Optional donor name
     """
     try:
-        # Verify CSRF for authenticated users (optional for donations)
-        # For public donations, you may want to skip CSRF
-        
         # Create payment intent
         payment_intent = create_donation_payment(
             amount=payment_data.amount,
@@ -357,6 +357,7 @@ async def create_payment_intent_endpoint(
             charity_id=payment_data.charity_id,
             donor_email=payment_data.donor_email,
             donor_name=payment_data.donor_name,
+            user_id=current_user["user_id"],
         )
         
         return PaymentIntentResponse(**payment_intent)
@@ -395,7 +396,28 @@ async def stripe_webhook(request: Request):
         # Handle different event types
         if event["type"] == "payment_intent.succeeded":
             payment_intent = event["data"]["object"]
-            # TODO: Record successful donation in database
+            
+            # Record successful donation in database
+            try:
+                metadata = payment_intent.get("metadata", {})
+                crisis_id = int(metadata.get("crisis_id"))
+                charity_id = int(metadata.get("charity_id")) if metadata.get("charity_id") else None
+                user_id = int(metadata.get("user_id")) if metadata.get("user_id") else None
+
+                donation = create_donation_record(
+                    crisis_id=crisis_id,
+                    amount=payment_intent["amount"],
+                    currency=payment_intent["currency"],
+                    stripe_payment_intent_id=payment_intent["id"],
+                    status=payment_intent["status"],
+                    user_id=user_id,
+                    charity_id=charity_id,
+                )
+                print(f"✅ Donation recorded: {donation['id']}")
+                
+            except Exception as db_error:
+                print(f"🚨 Database error recording donation: {db_error}")
+
             print(f"✅ Payment succeeded: {payment_intent['id']}")
             print(f"   Amount: ${payment_intent['amount'] / 100}")
             print(f"   Crisis ID: {payment_intent['metadata'].get('crisis_id')}")
@@ -408,6 +430,171 @@ async def stripe_webhook(request: Request):
         
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Webhook error: {str(e)}")
+
+
+@app.get("/me/donations", response_model=List[UserDonationResponse], tags=["User"])
+async def get_user_donations(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get a list of donations made by the current user with crisis and charity details.
+    Returns all successful donations ordered by date (newest first).
+    """
+    try:
+        print(f"📊 Fetching donations for user_id: {current_user['user_id']}")
+        donations = fetch_user_donations(user_id=current_user["user_id"])
+        print(f"📊 Found {len(donations)} donations")
+        return [UserDonationResponse(**donation) for donation in donations]
+    except Exception as e:
+        print(f"🚨 Error fetching donations: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch donations: {str(e)}")
+
+
+@app.get("/me/donations/summary", response_model=UserDonationSummary, tags=["User"])
+async def get_user_donations_summary(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Get summary statistics for donations made by the current user.
+    Returns total amount, currency, number of crises and charities supported.
+    """
+    try:
+        print(f"📊 Fetching donation summary for user_id: {current_user['user_id']}")
+        summary = fetch_user_donation_summary(user_id=current_user["user_id"])
+        print(f"📊 Summary: {summary}")
+        return UserDonationSummary(**summary)
+    except Exception as e:
+        print(f"🚨 Error fetching donation summary: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Failed to fetch donation summary: {str(e)}")
+
+
+@app.patch("/me/email", tags=["User"])
+async def update_user_email(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Update the current user's email address.
+    """
+    from .database import get_db_connection
+    
+    try:
+        body = await request.json()
+        new_email = body.get("email")
+        
+        if not new_email:
+            raise HTTPException(status_code=400, detail="Email is required")
+        
+        # Verify CSRF token
+        verify_csrf(request)
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if email already exists
+            cursor.execute("SELECT id FROM users WHERE email = %s AND id != %s", (new_email, current_user["user_id"]))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
+                raise HTTPException(status_code=400, detail="Email already in use")
+            
+            # Update email
+            cursor.execute(
+                "UPDATE users SET email = %s WHERE id = %s",
+                (new_email, current_user["user_id"])
+            )
+            conn.commit()
+            cursor.close()
+        
+        return {"message": "Email updated successfully", "email": new_email}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update email: {str(e)}")
+
+
+@app.patch("/me/password", tags=["User"])
+async def update_user_password(
+    request: Request,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Update the current user's password.
+    """
+    from .database import get_db_connection
+    
+    try:
+        body = await request.json()
+        new_password = body.get("password")
+        
+        if not new_password or len(new_password) < 6:
+            raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+        
+        # Verify CSRF token
+        verify_csrf(request)
+        
+        # Hash new password
+        hashed_password = hash_password(new_password)
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Update password
+            cursor.execute(
+                "UPDATE users SET password_hash = %s WHERE id = %s",
+                (hashed_password, current_user["user_id"])
+            )
+            conn.commit()
+            cursor.close()
+        
+        return {"message": "Password updated successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update password: {str(e)}")
+
+
+@app.delete("/me/account", tags=["User"])
+async def delete_user_account(
+    request: Request,
+    response: Response,
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Permanently delete the current user's account and all associated data.
+    """
+    from .database import get_db_connection
+    
+    try:
+        # Verify CSRF token
+        verify_csrf(request)
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Delete user (donations will be kept with user_id set to NULL due to ON DELETE SET NULL)
+            cursor.execute("DELETE FROM users WHERE id = %s", (current_user["user_id"],))
+            conn.commit()
+            cursor.close()
+        
+        # Clear authentication cookie
+        clear_auth_cookie(response)
+        clear_csrf_cookie(response)
+        
+        return {"message": "Account deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete account: {str(e)}")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000';
+// Use relative URLs - Vite proxy forwards /api to backend
+const API_BASE_URL = '';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -8,7 +9,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Enable sending cookies with cross-origin requests
+  withCredentials: true, // Enable sending cookies (same-origin)
 });
 
 // CSRF token management
@@ -17,7 +18,7 @@ let csrfToken: string | null = null;
 // Fetch CSRF token on app initialization
 export const initCSRF = async () => {
   try {
-    const response = await api.get('/auth/csrf-token');
+    const response = await api.get('/api/auth/csrf-token');
     csrfToken = response.data.csrf_token;
     return csrfToken;
   } catch (error) {
@@ -63,7 +64,7 @@ api.interceptors.response.use(
 export const authAPI = {
   // Register a new user
   register: async (email: string, password: string) => {
-    const response = await api.post('/auth/register', { email, password });
+    const response = await api.post('/api/auth/register', { email, password });
     // Server sets httpOnly cookie and returns CSRF token
     if (response.data.csrf_token) {
       csrfToken = response.data.csrf_token;
@@ -73,7 +74,7 @@ export const authAPI = {
 
   // Login user
   login: async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
+    const response = await api.post('/api/auth/login', { email, password });
     // Server sets httpOnly cookie and returns CSRF token
     if (response.data.csrf_token) {
       csrfToken = response.data.csrf_token;
@@ -83,14 +84,14 @@ export const authAPI = {
 
   // Get current user info
   me: async () => {
-    const response = await api.get('/auth/me');
+    const response = await api.get('/api/auth/me');
     return response.data;
   },
 
   // Logout - server-side session termination
   logout: async () => {
     try {
-      await api.post('/auth/logout');
+      await api.post('/api/auth/logout');
       // Server clears the httpOnly cookie
     } catch (error) {
       console.error('Logout failed:', error);
@@ -100,7 +101,7 @@ export const authAPI = {
 
   // Refresh access token
   refresh: async () => {
-    const response = await api.post('/auth/refresh');
+    const response = await api.post('/api/auth/refresh');
     // Server sets new httpOnly cookie
     return response.data;
   },

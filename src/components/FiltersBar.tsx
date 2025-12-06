@@ -23,6 +23,8 @@ interface FiltersBarProps {
   selectedSeverity: Severity | null;
   onSeverityChange: (severity: Severity | null) => void;
   onClear: () => void;
+  resultsLimit?: number;
+  onResultsLimitChange?: (limit: number) => void;
 }
 
 export function FiltersBar({
@@ -33,6 +35,8 @@ export function FiltersBar({
   selectedSeverity,
   onSeverityChange,
   onClear,
+  resultsLimit = 100,
+  onResultsLimitChange,
 }: FiltersBarProps) {
   const hasFilters = search || selectedCategory || selectedSeverity;
 
@@ -56,6 +60,26 @@ export function FiltersBar({
           </button>
         )}
       </div>
+
+      {/* Results Limit Selector */}
+      {onResultsLimitChange && (
+        <div className="flex items-center justify-between gap-3 px-1">
+          <label htmlFor="results-limit" className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            Results
+          </label>
+          <select
+            id="results-limit"
+            value={resultsLimit}
+            onChange={(e) => onResultsLimitChange(Number(e.target.value))}
+            className="text-sm px-3 py-1.5 rounded-lg bg-[#0b1220]/90 border border-white/10 text-slate-300 focus:border-cyan-400/50 focus:outline-none focus:ring-1 focus:ring-cyan-400/30 transition-all"
+          >
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+            <option value={200}>200</option>
+          </select>
+        </div>
+      )}
 
       {/* Category chips */}
       <div>

@@ -2,6 +2,7 @@
 -- PostgreSQL 15+
 
 -- Drop tables if they exist (for fresh setup)
+DROP TABLE IF EXISTS donations CASCADE;
 DROP TABLE IF EXISTS charities CASCADE;
 DROP TABLE IF EXISTS crises CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -41,12 +42,28 @@ CREATE TABLE charities (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create donations table
+CREATE TABLE donations (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    crisis_id INTEGER REFERENCES crises(id) ON DELETE CASCADE NOT NULL,
+    charity_id INTEGER REFERENCES charities(id) ON DELETE SET NULL,
+    amount INTEGER NOT NULL,
+    currency VARCHAR(10) NOT NULL,
+    stripe_payment_intent_id VARCHAR(255) UNIQUE NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Create indexes for common queries
 CREATE INDEX idx_crises_category ON crises(category);
 CREATE INDEX idx_crises_severity ON crises(severity);
 CREATE INDEX idx_crises_country ON crises(country);
 CREATE INDEX idx_crises_is_active ON crises(is_active);
 CREATE INDEX idx_charities_crisis_id ON charities(crisis_id);
+CREATE INDEX idx_donations_user_id ON donations(user_id);
+CREATE INDEX idx_donations_crisis_id ON donations(crisis_id);
+CREATE INDEX idx_donations_charity_id ON donations(charity_id);
 
 -- Full-text search index
 CREATE INDEX idx_crises_search ON crises USING GIN (

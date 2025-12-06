@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Crisis, Charity, FilterState, Category, Severity } from '@/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use relative URLs - Vite proxy forwards /api to backend
+const API_URL = '';
 
 export function useCrises() {
   const [crises, setCrises] = useState<Crisis[]>([]);
@@ -19,8 +20,10 @@ export function useCrises() {
     const fetchCrises = async () => {
       setIsLoading(true);
       try {
-        console.log('Fetching crises from:', `${API_URL}/crises/`);
-        const response = await fetch(`${API_URL}/crises/`);
+        console.log('Fetching crises from: /api/crises/');
+        const response = await fetch('/api/crises/', {
+          credentials: 'include', // Include cookies for same-origin
+        });
         if (response.ok) {
           const data = await response.json();
           // API returns { crises: [...] } so extract the array
@@ -44,8 +47,10 @@ export function useCrises() {
   useEffect(() => {
     const fetchCharities = async () => {
       try {
-        console.log('Fetching charities from:', `${API_URL}/charities/`);
-        const response = await fetch(`${API_URL}/charities/`);
+        console.log('Fetching charities from: /api/charities/');
+        const response = await fetch('/api/charities/', {
+          credentials: 'include', // Include cookies for same-origin
+        });
         if (response.ok) {
           const data = await response.json();
           // API returns { charities: [...] } so extract the array
